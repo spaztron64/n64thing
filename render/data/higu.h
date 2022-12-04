@@ -1,0 +1,1 @@
+extern u16 higu[];
