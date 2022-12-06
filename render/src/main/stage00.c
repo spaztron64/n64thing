@@ -8,7 +8,9 @@
 //#include "hertz.h"
 //#include "tomi/header.h"
 //#include "tomi/model.inc.c"
-#include "keiki/header.h"
+//#include "keiki/header.h"
+#include "lain/header.h"
+#include "lain/model.inc.c"
 //#include "keiki/model.inc.c"
 #include "assets.h"
 
@@ -37,6 +39,8 @@ void SetViewMtx( Dynamic* );
 void debug_console_int(char *name, int variable, int pos);
 void debug_console_float(char *name, float variable, int pos);
 int lim(u32 input);
+int hireso=1;
+int antialias=1;
 
 void    DrawBackground(void)
 {
@@ -122,6 +126,7 @@ void SetViewMtx( Dynamic* dp)
     u16 perspNorm;
 
     /* The calculation and set-up of the projection-matrix  */
+	if(hireso){
     guPerspective(
       &dp->projection,                      //Mtx *m
       &perspNorm,                           //u16 *perspNorm,
@@ -131,6 +136,18 @@ void SetViewMtx( Dynamic* dp)
       3000,                                //far plane clipping
       1.0F                                  //matrix object scaling
     );
+	}
+	else{
+    guPerspective(
+      &dp->projection,                      //Mtx *m
+      &perspNorm,                           //u16 *perspNorm,
+      50,                                   //FOV
+      (float)SCREEN_WD_LO/(float)SCREEN_HT_LO,    //ASPECT
+      10,                                   //near plane clipping
+      3000,                                //far plane clipping
+      1.0F                                  //matrix object scaling
+    );
+	}
 
     
     guLookAt(
@@ -185,10 +202,10 @@ void makeDL00(void)
   glistp = gfx_glist;
   
   /*  The initialization of RCP  */
-  gfxRCPInit();
+  gfxRCPInit(hireso);
 
   /* Clear the frame buffer and the Z-buffer  */
-  gfxClearCfb();
+  gfxClearCfb(hireso);
 
   SetViewMtx(&gfx_dynamic);
 
@@ -207,7 +224,8 @@ void makeDL00(void)
   /* Activate the RSP task.  Switch display buffers at the end of the task. */
   nuGfxTaskStart(&gfx_glist[0],(s32)(glistp - gfx_glist) * sizeof (Gfx), NU_GFX_UCODE_F3DEX2, NU_SC_NOSWAPBUFFER);
   current_time = (OS_CYCLES_TO_NSEC(osGetTime())) / 1000;
-  debug_console_int("curnt_time",current_time,0);
+  //debug_console_int("curnt_time",current_time,0);
+  debug_console_int("AA",antialias,0);
   frames++;
   if(current_time >= 1000000){
 	  osSetTime(0);
@@ -221,14 +239,14 @@ void makeDL00(void)
   
   gDPFullSync(glistp++);
   gSPEndDisplayList(glistp++);
-  //debug_console_int("frames",frames,1);
-  debug_console_int("fps",fps,1);
+  debug_console_int("frames",frames,1);
+  debug_console_int("fps",fps,2);
   //debug_console_int("texloads",1,3);
   //debug_console_int("triangles",1355,4); //tommy
   //debug_console_int("texloads",25,3);
   //debug_console_int("triangles",24262,4); //hatsu
-  debug_console_int("texloads",28,2);
-  debug_console_int("triangles",23434,3); //keiki
+  ////debug_console_int("texloads",28,2);
+  ////debug_console_int("triangles",23434,3); //keiki
   
 }
 
@@ -254,10 +272,16 @@ void draw_cube(Dynamic* dynamicp, float t)
   gDPSetFillColor(glistp++, GPACK_RGBA5551(0,0,0,1)<<16 | GPACK_RGBA5551(0,0,0,1));
   gDPFillRectangle(glistp++, 0, 0, 640, 480);
   
-  DrawBackground();
+  //DrawBackground();
   
   gDPSetTexturePersp(glistp++, G_TP_PERSP);
-  gDPSetRenderMode(glistp++,G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+  if(antialias){
+	gDPSetRenderMode(glistp++,G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+  }
+  else{
+	gDPSetRenderMode(glistp++,G_RM_ZB_OPA_SURF, G_RM_ZB_OPA_SURF2);
+
+  }
   gSPTexture(glistp++,0x8000, 0x8000, 0, 0, G_ON);
   gDPSetCycleType(glistp++, G_CYC_1CYCLE);
   gDPSetCombineMode(glistp++,G_CC_DECALRGBA, G_CC_DECALRGBA);
@@ -273,12 +297,13 @@ void draw_cube(Dynamic* dynamicp, float t)
   gSPSegment(glistp++, 0x01, OS_K0_TO_PHYSICAL(buf));
   //gSPDisplayList(glistp++, tomi_Tommy_mesh);
   //gSPDisplayList(glistp++, hatsu_xiaoyu_mesh);
-  gSPDisplayList(glistp++, keiki_keiki_mesh);
+  //gSPDisplayList(glistp++, keiki_keiki_mesh);
+  gSPDisplayList(glistp++, lain_lain_mesh_mesh);
   /*=================================================
   ====================================================*/
 
-  gDPFillRectangle(glistp++, 0, 0, 640, 40);
-  gDPFillRectangle(glistp++, 0, 440, 640, 480);
+  //gDPFillRectangle(glistp++, 0, 0, 640, 40);
+  //gDPFillRectangle(glistp++, 0, 440, 640, 480);
 
   /* Finalise and exit drawing */
   gSPTexture(glistp++,0, 0, 0, 0, G_OFF);
@@ -299,12 +324,32 @@ void updateGame00()
   /* Really basic controls for debugging purposes */
   if(contdata[0].button & START_BUTTON){
     t += 1;
-	//if(hireso){
-	//	osViSetMode(&osViModeTable[OS_VI_NTSC_LAN1]); 
-	//}
-	//else{
-	//	osViSetMode(&osViModeTable[OS_VI_NTSC_HAN1]); 
-	//}
+	if(hireso){
+		hireso=0;
+		
+		//gfxRCPInit(hireso);	
+		//gfxClearCfb(hireso);
+		nuGfxTaskAllEndWait();
+		osViSetMode(&osViModeTable[OS_VI_NTSC_LAN1]);
+		//nuGfxDisplayOff();
+		//nuGfxInit();
+		//nuGfxSetCfb(LowFrameBuf, 3);
+		//nuGfxDisplayOn();
+	}
+	else{
+		hireso=1;
+		nuGfxTaskAllEndWait();
+		osViSetMode(&osViModeTable[OS_VI_NTSC_HAN1]);
+		//nuGfxDisplayOff();
+		//nuGfxInit();
+		//nuGfxSetCfb(HighFrameBuf, 2);
+		//nuGfxDisplayOn();
+		//gfxRCPInit(hireso);
+		//gfxClearCfb(hireso);
+		//nuGfxInit();
+	}
+	osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+  osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
   }
 
   if(contdata[0].button & A_BUTTON){
@@ -318,6 +363,14 @@ void updateGame00()
   }
   if(contdata[0].button & R_TRIG){
     cubescale -= 0.005;
+  }
+  if(contdata[0].button & Z_TRIG){
+    if(antialias){
+		antialias=0;
+	}
+	else{
+		antialias=1;
+	}
   }
 
   // UP/DOWN CAM ROTATION CONTROLS

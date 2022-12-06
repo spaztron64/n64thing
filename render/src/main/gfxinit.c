@@ -10,6 +10,11 @@ Vp vp = {
     SCREEN_WD*2, SCREEN_HT*2, G_MAXZ/2, 0,	/* Move  */
 };
 
+Vp vp_lo = {
+    SCREEN_WD_LO*2, SCREEN_HT_LO*2, G_MAXZ/2, 0,	/* The scale factor  */
+    SCREEN_WD_LO*2, SCREEN_HT_LO*2, G_MAXZ/2, 0,	/* Move  */
+};
+
 /*
   The initialization of RDP 
 */
@@ -23,11 +28,29 @@ Gfx setup_rdpstate[] = {
   gsSPEndDisplayList(),
 };
 
+Gfx setup_rdpstate_lo[] = {
+  gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
+  gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+  //gsDPSetScissor(G_SC_NON_INTERLACE, 0,0, SCREEN_WD,SCREEN_HT),
+  gsDPSetScissor(G_SC_NON_INTERLACE, 0,0, SCREEN_WD_LO,SCREEN_HT_LO),
+  //gsDPSetColorDither(G_CD_BAYER),
+  gsDPSetColorDither(G_CD_MAGICSQ),
+  gsSPEndDisplayList(),
+};
+
 /*
   The initialization of RSP 
 */
 Gfx setup_rspstate[] = {
   gsSPViewport(&vp),
+  gsSPClearGeometryMode(0xFFFFFFFF),
+  gsSPSetGeometryMode(G_ZBUFFER | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+  gsSPTexture(0, 0, 0, 0, G_OFF),
+  gsSPEndDisplayList(),
+};
+
+Gfx setup_rspstate_lo[] = {
+  gsSPViewport(&vp_lo),
   gsSPClearGeometryMode(0xFFFFFFFF),
   gsSPSetGeometryMode(G_ZBUFFER | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
   gsSPTexture(0, 0, 0, 0, G_OFF),

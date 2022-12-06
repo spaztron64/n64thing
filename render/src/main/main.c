@@ -10,11 +10,18 @@ void makeDL00(void);
 void initStage00(void);
 void updateGame00(void);
 int mult = 1;
+extern int hireso;
 
 /* High resolution frame buffer address array. */
 u16* HighFrameBuf[2] = {
     (u16*)CFB_HIGH_ADDR0,
     (u16*)CFB_HIGH_ADDR1
+};
+
+u16*	LowFrameBuf[3] = {
+    (u16*)CFB_LOW_ADDR0,
+    (u16*)CFB_LOW_ADDR1,
+    (u16*)CFB_LOW_ADDR2,
 };
 
 /* The global variable  */
@@ -27,6 +34,7 @@ void mainproc(void)
 {
 
   /* The initialization of graphic  */
+  if(hireso){
   nuGfxInit();
 
   contPattern = nuContInit();
@@ -55,6 +63,37 @@ void mainproc(void)
 
   /* The screen display ON */
   nuGfxDisplayOn();
+  }
+  else{
+	  nuGfxInit();
+
+  contPattern = nuContInit();
+
+
+  osCreateViManager(OS_PRIORITY_VIMGR);
+  osViSetMode(&osViModeTable[OS_VI_NTSC_LAN1]); 
+  osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+  osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
+  
+  nuGfxDisplayOff();
+  nuGfxSetCfb(LowFrameBuf, 3);
+  nuGfxSetZBuffer((u16*)(ZBUFFER_ADDR));
+  
+      nuDebConClear(0);
+    nuDebConTextAttr(0, NU_DEB_CON_ATTR_BLINK);
+    nuDebConTextPos(0, 13,25);
+    //nuDebConTextColor(0, NU_DEB_CON_TEXT_RED);
+    //nuDebConPuts(0, "High Resolution");
+    nuDebConTextAttr(0, NU_DEB_CON_ATTR_NORMAL);
+  /* Init scene */
+  initStage00();
+
+  /* Set call-back  */
+  nuGfxFuncSet((NUGfxFunc)stage00);
+
+  /* The screen display ON */
+  nuGfxDisplayOn();  
+  }
 
   while(1){}
 }

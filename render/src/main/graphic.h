@@ -6,6 +6,8 @@
 //#define SCREEN_WD        320
 #define SCREEN_HT        480
 #define SCREEN_WD        640
+#define SCREEN_HT_LO        240
+#define SCREEN_WD_LO        320
 
 
 
@@ -34,11 +36,13 @@ extern Dynamic gfx_dynamic;
 extern Gfx* glistp;
 extern Gfx gfx_glist[GFX_GLIST_LEN];
 /*-------------------------------- function ---------------------------------*/
-extern void gfxRCPInit(void);
-extern void gfxClearCfb(void);
+extern void gfxRCPInit(int hireso);
+extern void gfxClearCfb(int hireso);
 /*------------------------------- other extern define -----------------------*/
 extern Gfx setup_rdpstate[];
+extern Gfx setup_rdpstate_lo[];
 extern Gfx setup_rspstate[];
+extern Gfx setup_rspstate_lo[];
 extern int mult;
 
 #endif /* _GRAPHIC_H_ */

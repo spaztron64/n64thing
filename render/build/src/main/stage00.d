@@ -24,5 +24,7 @@ build/src/main/stage00.o: src/main/stage00.c /usr/include/n64/assert.h \
  /usr/include/n64/PR/gu.h /usr/include/n64/PR/ramrom.h \
  /usr/include/n64/PR/sp.h /usr/include/n64/PR/ucode.h \
  /usr/include/n64/PR/ultraerror.h /usr/include/n64/PR/ultralog.h \
- /usr/include/n64/PR/gs2dex.h src/main/graphic.h include/localdef.h \
- data/keiki/header.h data/assets.h data/higu.h
+ /usr/include/n64/PR/gs2dex.h /usr/include/n64/nustd/math.h \
+ /usr/include/n64/nustd/mathdef.h src/main/graphic.h include/localdef.h \
+ data/lain/header.h data/lain/model.inc.c data/assets.h data/higu.h \
+ /usr/include/n64/nustd/string.h
