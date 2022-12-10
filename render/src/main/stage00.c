@@ -8,16 +8,21 @@
 //#include "hertz.h"
 //#include "tomi/header.h"
 //#include "tomi/model.inc.c"
-//#include "keiki/header.h"
-#include "lain/header.h"
-#include "lain/model.inc.c"
+#include "keiki/header.h"
+//#include "lain/header.h"
+//#include "lain/model.inc.c"
+//#include "dust2/header.h"
+//#include "dust2/model.inc.c"
 //#include "keiki/model.inc.c"
+//#include "lighttest/model.inc.c"
+//#include "mikupdft/header.h"
 #include "assets.h"
 
 //#include "vajssiti.h"
 
 #define     BACK_WD       640
 #define     BACK_HT       440
+
 #define     ROWS          2
 #define     DELTA         1
 //#include "hatsu/model.inc.c"
@@ -30,8 +35,8 @@ OSTime current_time = 0;
 int frames = 0;
 int fps = 0;
 //u64 buf[90000];  //DisplayList buffer
-u64* buf = 0x80400000;
-u64* bgbuf = 0x80600000;
+u64* buf = 0x80550000;
+u64* bgbuf = 0x80400000;
 
 /* Prototype all funcs before calling*/
 void draw_cube( Dynamic* dynamicp, float t);
@@ -50,7 +55,12 @@ void    DrawBackground(void)
   static int    posx = 0, delta = DELTA;
   
   gSPSegment(glistp++, 0x02, OS_K0_TO_PHYSICAL(bgbuf));
-  gDPSetCycleType(glistp++, G_CYC_COPY);
+  if(hireso){
+	gDPSetCycleType(glistp++, G_CYC_COPY);
+  }
+  else{
+	gDPSetCycleType(glistp++, G_CYC_1CYCLE);
+  }
   gDPSetCombineMode(glistp++, G_CC_DECALRGBA, G_CC_DECALRGBA);
   gDPSetRenderMode(glistp++, G_RM_NOOP, G_RM_NOOP2);
   gDPSetTexturePersp(glistp++, G_TP_NONE);
@@ -71,6 +81,7 @@ void    DrawBackground(void)
                        G_TX_WRAP, G_TX_WRAP,
                        0, 0,
                        G_TX_NOLOD, G_TX_NOLOD);
+	if(hireso){
     gSPTextureRectangle(glistp++,
                         0 << 2,
                         (i * ROWS) << 2,
@@ -79,6 +90,17 @@ void    DrawBackground(void)
                         G_TX_RENDERTILE,
                         posx << 5, (i * ROWS) << 5,
                         4 << 10, 1 << 10);
+	}
+	else{
+		    gSPTextureRectangle(glistp++,
+                        0 << 2,
+                        (i * ROWS) << 1,
+                        (SCREEN_WD - 1) << 1,
+                        (i * ROWS + (ROWS - 1)) << 1,
+                        G_TX_RENDERTILE,
+                        posx << 5, (i * ROWS) << 5,
+                        2 << 10, 1 << 10);
+	}
   }
   posx += delta;
   if(posx + SCREEN_WD >= BACK_WD)
@@ -177,13 +199,17 @@ void SetViewMtx( Dynamic* dp)
 
 void initStage00()
 {
-	u32 seg_start = (u32)_tomiSegmentRomStart;
-	u32 seg_size = _tomiSegmentRomEnd - _tomiSegmentRomStart;
-	nuPiReadRom(seg_start, buf, seg_size);
+	
 	
 	u32 bgseg_start = (u32)_vajssitiSegmentRomStart;
 	u32 bgseg_size = _vajssitiSegmentRomEnd - _vajssitiSegmentRomStart;
 	nuPiReadRom(bgseg_start, bgbuf, bgseg_size);
+	
+	u32 seg_start = (u32)_tomiSegmentRomStart;
+	u32 seg_size = _tomiSegmentRomEnd - _tomiSegmentRomStart;
+	nuPiReadRom(seg_start, buf, seg_size);
+	
+	
 	
   nuDebConDisp(NU_SC_SWAPBUFFER);
   cubescale = 1;
@@ -223,9 +249,10 @@ void makeDL00(void)
 
   /* Activate the RSP task.  Switch display buffers at the end of the task. */
   nuGfxTaskStart(&gfx_glist[0],(s32)(glistp - gfx_glist) * sizeof (Gfx), NU_GFX_UCODE_F3DEX2, NU_SC_NOSWAPBUFFER);
+  //gSPLoadUcodeL(glistp++,gspF3DEX2_Rej_fifo); 
   current_time = (OS_CYCLES_TO_NSEC(osGetTime())) / 1000;
   //debug_console_int("curnt_time",current_time,0);
-  debug_console_int("AA",antialias,0);
+  debug_console_int("AA",antialias,28);
   frames++;
   if(current_time >= 1000000){
 	  osSetTime(0);
@@ -239,8 +266,16 @@ void makeDL00(void)
   
   gDPFullSync(glistp++);
   gSPEndDisplayList(glistp++);
-  debug_console_int("frames",frames,1);
-  debug_console_int("fps",fps,2);
+  debug_console_int("frames",frames,0);
+  debug_console_int("fps",fps,1);
+  nuDebConTextPos(0, 32,28);
+  //nuDebConTextColor(0, NU_DEB_CON_TEXT_RED);
+  if(hireso){
+	nuDebConPuts(0, "640x480");
+  }
+  else{
+	nuDebConPuts(0, "320x240");
+  }
   //debug_console_int("texloads",1,3);
   //debug_console_int("triangles",1355,4); //tommy
   //debug_console_int("texloads",25,3);
@@ -273,6 +308,7 @@ void draw_cube(Dynamic* dynamicp, float t)
   gDPFillRectangle(glistp++, 0, 0, 640, 480);
   
   //DrawBackground();
+
   
   gDPSetTexturePersp(glistp++, G_TP_PERSP);
   if(antialias){
@@ -287,8 +323,8 @@ void draw_cube(Dynamic* dynamicp, float t)
   gDPSetCombineMode(glistp++,G_CC_DECALRGBA, G_CC_DECALRGBA);
   gDPSetTextureFilter(glistp++, G_TF_BILERP);
   gSPClearGeometryMode(glistp++,0xFFFFFFFF);
-  //gSPSetGeometryMode(glistp++, G_ZBUFFER | G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK | G_CLIPPING);
   gSPSetGeometryMode(glistp++, G_ZBUFFER | G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK | G_CLIPPING);
+  //gSPSetGeometryMode(glistp++, G_ZBUFFER | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK | G_CLIPPING);
 
   /* DRAW OBJECT 
   ====================================================
@@ -297,13 +333,24 @@ void draw_cube(Dynamic* dynamicp, float t)
   gSPSegment(glistp++, 0x01, OS_K0_TO_PHYSICAL(buf));
   //gSPDisplayList(glistp++, tomi_Tommy_mesh);
   //gSPDisplayList(glistp++, hatsu_xiaoyu_mesh);
-  //gSPDisplayList(glistp++, keiki_keiki_mesh);
-  gSPDisplayList(glistp++, lain_lain_mesh_mesh);
+  gSPDisplayList(glistp++, keiki_keiki_mesh);
+  //gSPDisplayList(glistp++, lighttest_Plane_mesh);
+  //gSPDisplayList(glistp++, mikupdft_材質4_mesh);
+  //gSPDisplayList(glistp++, lain_lain_mesh_mesh);
+  //gSPDisplayList(glistp++, lain_Plane_mesh);
+  //gSPDisplayList(glistp++, dust2_de_dust2_mesh);
+  
   /*=================================================
   ====================================================*/
 
-  //gDPFillRectangle(glistp++, 0, 0, 640, 40);
-  //gDPFillRectangle(glistp++, 0, 440, 640, 480);
+  if(hireso){
+	//gDPFillRectangle(glistp++, 0, 0, 640, 40);
+	//gDPFillRectangle(glistp++, 0, 440, 640, 480);
+  }
+  else{
+	//gDPFillRectangle(glistp++, 0, 0, 320, 20);
+	//gDPFillRectangle(glistp++, 0, 220, 320, 240);
+  }
 
   /* Finalise and exit drawing */
   gSPTexture(glistp++,0, 0, 0, 0, G_OFF);

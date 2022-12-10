@@ -110,7 +110,8 @@ SECTIONS
 
    BEGIN_SEG(tomi, 0x01000000)
    {
-      BUILD_DIR/data/keiki/keiki.o(.data);
+      BUILD_DIR/data/keiki/model.inc.o(.data);
+	  //BUILD_DIR/data/mikupdft/model.inc.o(.data);
    }
    END_SEG(tomi)
    
